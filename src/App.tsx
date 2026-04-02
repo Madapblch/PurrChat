@@ -5,6 +5,11 @@ import { usePeer, PeerMessage } from './hooks/usePeer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check, Save, Edit2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { io } from 'socket.io-client';
+
+const socket = io('https://purrchat.onrender.com', {
+  transports: ['websocket']
+});
 
 const BOT_ID = 'bot';
 const BOT_USER = {
