@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Peer } from 'peerjs';
 import { io, Socket } from 'socket.io-client';
 
-// 1. ИСПРАВЛЕНО: Сюда нужно вставить ВАШУ полную ссылку из Render
+// Твой проверенный адрес сервера на Render
 const SOCKET_SERVER_URL = 'https://purrchat.onrender.com'; 
 
 export const usePeer = (roomId: string) => {
@@ -11,13 +11,13 @@ export const usePeer = (roomId: string) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    // Инициализация Socket.io
+    // 1. Подключаем сокеты для чата
     const newSocket = io(SOCKET_SERVER_URL, {
       transports: ['websocket'],
     });
     setSocket(newSocket);
 
-    // 2. ИСПРАВЛЕНО: Убраны кривые настройки ICE-серверов, которые вызывали ошибку
+    // 2. Создаем Peer-объект без лишних конфигов (чтобы не было ошибок ICE)
     const newPeer = new Peer({
       secure: true,
     });
@@ -30,17 +30,18 @@ export const usePeer = (roomId: string) => {
   }, []);
 
   useEffect(() => {
-    // Защита от undefined
+    // Ждем, пока всё создастся, чтобы не было ошибки "reading 'on'"
     if (!peer || !socket) return;
 
     peer.on('open', (id) => {
       setMyId(id);
       console.log('Ваш Peer ID:', id);
+      // Уведомляем сервер, что мы зашли в комнату
       socket.emit('join-room', roomId, id);
     });
 
     socket.on('user-connected', (userId: string) => {
-      console.log('Пользователь подключился:', userId);
+      console.log('К нам подключился пользователь:', userId);
     });
 
     return () => {
