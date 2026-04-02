@@ -1,58 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Peer } from 'peerjs';
 import { io, Socket } from 'socket.io-client';
 
-// Твой проверенный адрес сервера на Render
-const SOCKET_SERVER_URL = 'https://purrchat.onrender.com'; 
-
-export const usePeer = (roomId: string) => {
-  const [peer, setPeer] = useState<Peer | null>(null);
-  const [myId, setMyId] = useState<string>('');
+export const usePeer = (currentUser: any) => {
+  const [peerId, setPeerId] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [connectedUsers, setConnectedUsers] = useState({});
+  const [incomingMessages, setIncomingMessages] = useState({});
+  const peerRef = useRef<Peer | null>(null);
 
   useEffect(() => {
-    // 1. Подключаем сокеты для чата
-    const newSocket = io(SOCKET_SERVER_URL, {
-      transports: ['websocket'],
-    });
-    setSocket(newSocket);
+    const s = io('https://onrender.com', { transports: ['websocket'] });
+    setSocket(s);
 
-    // 2. Создаем Peer-объект без лишних конфигов (чтобы не было ошибок ICE)
-    const newPeer = new Peer({
-      secure: true,
-    });
-    setPeer(newPeer);
+    const p = new Peer({ secure: true });
+    peerRef.current = p;
 
-    return () => {
-      newSocket.disconnect();
-      newPeer.destroy();
-    };
+    p.on('open', (id) => {
+      setPeerId(id);
+      s.emit('join-server', { ...currentUser, id });
+    });
+
+    s.on('users-list', (users) => setConnectedUsers(users));
+    s.on('receive-message', (msg) => {
+      setIncomingMessages(prev => ({ ...prev, [msg.senderId]: [...(prev[msg.senderId] || []), msg] }));
+    });
+
+    return () => { s.disconnect(); p.destroy(); };
   }, []);
 
-  useEffect(() => {
-    // Ждем, пока всё создастся, чтобы не было ошибки "reading 'on'"
-    if (!peer || !socket) return;
-
-    peer.on('open', (id) => {
-      setMyId(id);
-      console.log('Ваш Peer ID:', id);
-      // Уведомляем сервер, что мы зашли в комнату
-      socket.emit('join-room', roomId, id);
-    });
-
-    socket.on('user-connected', (userId: string) => {
-      console.log('К нам подключился пользователь:', userId);
-    });
-
-    return () => {
-      peer.off('open');
-      socket.off('user-connected');
-    };
-  }, [peer, socket, roomId]);
-
-  return {
-    peer,
-    myId,
-    socket
+  const sendMessageToPeer = (to: string, text: string, type: string) => {
+    socket?.emit('send-message', { to, text, type, senderId: peerId });
   };
+
+  return { peerId, socket, connectedUsers, incomingMessages, sendMessageToPeer, connectToPeer: async (id: string) => {}, sendEditToPeer: () => {}, sendDeleteToPeer: () => {}, createGroup: () => {}, incomingGroups: [], sendTypingToPeer: () => {}, typingUsers: {} };
 };
