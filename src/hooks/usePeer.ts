@@ -170,10 +170,10 @@ export const usePeer = (currentUser: PeerUser) => {
     setPeerId(myId);
 
   const peer = new Peer(myId, {
-    config: { iceServers: [{ urls: 'stun:://google.com' }] },
-    secure: true,
-    debug: 1
-  });
+  secure: true,
+  debug: 1
+});
+
 
     peerRef.current = peer;
 
