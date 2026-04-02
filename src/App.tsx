@@ -93,33 +93,6 @@ export function App() {
   }, [peerId]);
 
   useEffect(() => {
-    Object.keys(incomingMessages).forEach(chatId => {
-       if (chatId.startsWith('group-')) return;
-       setChats(prev => {
-          if (prev.find(c => c.id === chatId)) return prev;
-          return [...prev, {
-             id: chatId,
-             name: `User ${chatId.substr(0,4)}`,
-             avatar: `https://dicebear.com{chatId}`,
-             online: true,
-             bio: 'A new friend found via P2P.',
-             lastMessage: 'New message',
-             lastMessageTime: 'Just now'
-          }];
-       });
-    });
-  }, [incomingMessages]);
-
-  useEffect(() => {
-    incomingGroups.forEach(group => {
-        setChats(prev => {
-            if (prev.find(c => c.id === group.id)) return prev;
-            return [...prev, { ...group, lastMessage: 'Group joined', lastMessageTime: 'Now' }];
-        });
-    });
-  }, [incomingGroups]);
-
-  useEffect(() => {
     setChats(prev => {
       let newChats = [...prev];
       let changed = false;
@@ -137,33 +110,18 @@ export function App() {
   }, [connectedUsers]);
 
   const handleSendMessage = async (text: string, file?: File) => {
-    const newMessage: PeerMessage = {
-      id: Date.now().toString(),
-      senderId: currentUser.id,
-      content: text,
-      timestamp: new Date(),
-      type: file ? (file.type.startsWith('image/') ? 'image' : 'file') : 'text',
-      fileUrl: file ? URL.createObjectURL(file) : undefined,
-      fileName: file?.name
-    };
-
     if (activeChatId === BOT_ID) {
-      setBotMessages(prev => [...prev, newMessage]);
-      setTimeout(() => {
-         setBotMessages(prev =>);
-      }, 1500);
+      const msg = { id: Date.now().toString(), senderId: currentUser.id, content: text, timestamp: new Date(), type: 'text' as const };
+      setBotMessages(prev => [...prev, msg]);
     } else {
-      sendMessageToPeer(activeChatId, text, newMessage.type, newMessage.fileUrl, newMessage.fileName, undefined, newMessage.id);
-      setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMessage: text || 'File', lastMessageTime: 'Now' } : c));
+      sendMessageToPeer(activeChatId, text, 'text');
     }
   };
 
-  const handleCopyId = () => { navigator.clipboard.writeText(peerId); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); };
-  const saveProfile = () => {
-    const updated = { ...currentUser, name: editName, bio: editBio };
-    setCurrentUser(updated);
-    localStorage.setItem('purrchat_user', JSON.stringify(updated));
-    setIsEditingProfile(false);
+  const handleCopyId = () => { 
+    navigator.clipboard.writeText(peerId); 
+    setCopySuccess(true); 
+    setTimeout(() => setCopySuccess(false), 2000); 
   };
 
   const activeMessages = activeChatId === BOT_ID ? botMessages : (incomingMessages[activeChatId] || []);
@@ -173,9 +131,8 @@ export function App() {
   return (
     <div className="flex h-screen bg-gray-950 font-sans overflow-hidden text-gray-100">
       <Sidebar currentUser={currentUser} chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} onAddFriend={() => setShowAddFriend(true)} onCreateGroup={() => setShowCreateGroup(true)} onShowHelp={() => setShowHelp(true)} onEditProfile={() => setShowProfile(true)} />
-      <ChatWindow chat={activeChatInfo} messages={activeMessages} currentUser={currentUser} onSendMessage={handleSendMessage} onShowProfile={() => setShowUserProfile(true)} onEditMessage={handleEditMessage} onStartEdit={handleStartEdit} onDeleteMessage={handleDeleteMessage} editingMessage={editingMessage} onCancelEdit={() => setEditingMessage(null)} onTyping={handleTyping} />
+      <ChatWindow chat={activeChatInfo} messages={activeMessages} currentUser={currentUser} onSendMessage={handleSendMessage} onShowProfile={() => setShowUserProfile(true)} onEditMessage={() => {}} onStartEdit={() => {}} onDeleteMessage={() => {}} editingMessage={editingMessage} onCancelEdit={() => setEditingMessage(null)} onTyping={() => {}} />
       
-      {/* Модалки (Add Friend, Profile и т.д.) */}
       <AnimatePresence>
         {showAddFriend && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
