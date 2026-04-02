@@ -170,7 +170,7 @@ export const usePeer = (currentUser: PeerUser) => {
     setPeerId(myId);
 
   const peer = new Peer(myId, {
-    host: '://onrender.com', // Ваш адрес с Render (без https://)
+    host: 'https://purrchat.onrender.com', // Ваш адрес с Render (без https://)
     secure: true,
     port: 443,
     path: '/',
