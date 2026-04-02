@@ -2,24 +2,20 @@ import { Server } from 'socket.io';
 
 const PORT = process.env.PORT || 3000;
 const io = new Server(PORT, {
-  cors: { origin: "*" } // Разрешаем фронтенду подключаться
+  cors: { origin: "*" } 
 });
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('Пользователь вошел:', socket.id);
 
-  socket.on('join-room', (roomId, userId) => {
-    socket.join(roomId);
-    socket.to(roomId).emit('user-connected', userId);
-  });
-
-  socket.on('signal', (data) => {
-    io.to(data.to).emit('signal', data);
+  // Слушаем сообщение от одного и рассылаем всем
+  socket.on('send-message', (data) => {
+    io.emit('receive-message', data); 
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('Пользователь ушел');
   });
 });
 
-console.log(`Server is running on port ${PORT}`);
+console.log(`Сервер чата запущен на порту ${PORT}`);
