@@ -169,11 +169,15 @@ export const usePeer = (currentUser: PeerUser) => {
     }
     setPeerId(myId);
 
-    const peer = new Peer(myId, {
-      config: { iceServers: STUN_SERVERS },
-      secure: true,
-      debug: 1
-    });
+  const peer = new Peer(myId, {
+    host: '://onrender.com', // Ваш адрес с Render (без https://)
+    secure: true,
+    port: 443,
+    path: '/',
+    config: { iceServers: STUN_SERVERS },
+    debug: 1
+  });
+
     peerRef.current = peer;
 
     peer.on('open', (id) => {
