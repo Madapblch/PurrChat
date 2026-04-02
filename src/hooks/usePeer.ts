@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Peer } from 'peerjs';
 import { io, Socket } from 'socket.io-client';
 
-// Замените на ВАШ адрес из панели Render
-const SOCKET_SERVER_URL = 'https://onrender.com';
+// 1. ИСПРАВЛЕНО: Сюда нужно вставить ВАШУ полную ссылку из Render
+const SOCKET_SERVER_URL = 'https://purrchat.onrender.com'; 
 
 export const usePeer = (roomId: string) => {
   const [peer, setPeer] = useState<Peer | null>(null);
@@ -11,15 +11,14 @@ export const usePeer = (roomId: string) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    // 1. Инициализация Socket.io
+    // Инициализация Socket.io
     const newSocket = io(SOCKET_SERVER_URL, {
       transports: ['websocket'],
     });
     setSocket(newSocket);
 
-    // 2. Инициализация PeerJS (используем бесплатное облако для стабильности)
+    // 2. ИСПРАВЛЕНО: Убраны кривые настройки ICE-серверов, которые вызывали ошибку
     const newPeer = new Peer({
-      config: { iceServers: [{ urls: 'stun:://google.com' }] },
       secure: true,
     });
     setPeer(newPeer);
@@ -31,7 +30,7 @@ export const usePeer = (roomId: string) => {
   }, []);
 
   useEffect(() => {
-    // ЗАЩИТА: Если объекты еще не созданы, выходим из функции
+    // Защита от undefined
     if (!peer || !socket) return;
 
     peer.on('open', (id) => {
@@ -40,11 +39,10 @@ export const usePeer = (roomId: string) => {
       socket.emit('join-room', roomId, id);
     });
 
-    socket.on('user-connected', (userId) => {
+    socket.on('user-connected', (userId: string) => {
       console.log('Пользователь подключился:', userId);
     });
 
-    // Очистка событий при закрытии
     return () => {
       peer.off('open');
       socket.off('user-connected');
